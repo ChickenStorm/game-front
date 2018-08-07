@@ -2,10 +2,18 @@ import Dictionnary from './core/dictionnary.js';
 
 import Fleet from './model/fleet.js';
 import Planet from './model/planet.js';
+import Player from './model/player.js';
+
+import { getHTMLShipArrayStringFleet, getHTMLShipArrayStringHangar } from './ship.js';
 
 
 const planetId = window.getCurrentPlanet();
+var fleetId = window.getCurrentFleet();
 const COLL_SPAN = 2;
+
+const refreshFleetId = () => {
+	fleetId = window.getCurrentFleet();
+}
 
 const refreshFleetViewPlanet = () => {
 	/*
@@ -22,7 +30,7 @@ const refreshFleetViewPlanet = () => {
 const getHTMLFleetArrayData = (fleets,isPlanetView = true) => {
 	/*
 	 * return a string in HTML format displaying information about the Array
-	 * isPlanetView is a boolean which is true when requesting string to display view for a planet and false when reauesting view for all fleets
+	 * iisPlanetView is a boolean which is true when requesting string to display view for a planet and false when requesting view for all fleets or for single fleet
 	 */
 	
 	var stringHTMLToReturn=`<tr class="header-table"><th class = "fleet-id"> ${Dictionnary.translations.fleet.view.header_id} </th> <th class = "fleet-position"> ${Dictionnary.translations.fleet.view.header_location} </th> </tr>`;
@@ -48,10 +56,10 @@ const getHTMLFleetArrayData = (fleets,isPlanetView = true) => {
 	
 };
 
-const getHTMLFleetData = (fleet,isPlanetView = true) => {
+export const getHTMLFleetData = (fleet,isPlanetView = true) => {
 	/*
 	 * return a string in HTML format displaying information about the fleet
-	 * isPlanetView is a boolean which is true when requesting string to display view for a planet and false when reauesting view for all fleets
+	 * isPlanetView is a boolean which is true when requesting string to display view for a planet and false when requesting view for all fleets or for single fleet
 	 */
 	
 	if (fleet == null || fleet == undefined) {
@@ -83,12 +91,12 @@ const getHTMLFleetData = (fleet,isPlanetView = true) => {
 	else{
 		// if the fleet is not link to a planet that means that it is on a journey
 		// this is unimplemented yet.
-		//TODO when journey in implemented chnage the texte to show
+		// TODO when journey in implemented chnage the texte to show #comeback
 		if (isPlanetView) {
 			textPosition = Dictionnary.translations.fleet.view.planet.on_journey;
 		}
 		else{
-			textPosition = Dictionnary.translations.all.view.planet.on_journey;
+			textPosition = Dictionnary.translations.fleet.view.all.on_journey;
 		}
 	}
 	
@@ -146,5 +154,41 @@ export const creatFleet = () => {
 
 export const initBaseForFleet = () => Planet.fetch(planetId).then(planet => {
     
+	Player.fetchCurrentPlayer().then(player => {
+	    var profileLink = document.createElement('a');
+	    profileLink.href = '/views/profile';
+	    profileLink.innerText = player.pseudo;
+	    document.querySelector("#player-data h3").appendChild(profileLink);
+	});
+	
     document.querySelector('#planet-data > header > h1').innerHTML = Dictionnary.translations.planet.fleet.replace("%planet%", `<a href="/views/map/planet.html?id=${planet.id}">${planet.name}</a>`);
 });
+
+export const initFleetViewSingle = () => {
+	/*
+	 * initialise the view for one fleet
+	 */
+	
+	refreshFleetId();
+	
+	var id = fleetId;
+	Planet.fetch(planetId).then(planet => { 
+		
+		document.querySelector('#fleet-view > section > h3').innerHTML = Dictionnary.translations.fleet.view.single.title.replace("%fleet%", `<span class="fleet-id"> ${id} </span>`);
+		
+		
+		Fleet.fetch(id).then( fleet => {
+			document.querySelector('#fleet-table').innerHTML = getHTMLFleetArrayData([fleet],false);
+			
+		});
+		
+		Planet.fetchShips(planetId).then( ships => {
+			document.querySelector('#ships-hangar > .ships-list > div').innerHTML= getHTMLShipArrayStringHangar(ships)
+		});
+		
+		// TODO dans le back aussi
+		/*Fleet.fetchShips(id).then( ships => {
+			document.querySelector('#ships-fleet > .ships-list').innerHTML= getHTMLShipArrayStringFleet(ships)
+		});*/
+	});
+};

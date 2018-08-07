@@ -13,6 +13,8 @@ Player.fetchCurrentPlayer().then(player => {
 
 window.setCurrentPlanet = id => localStorage.setItem('current_planet', id);
 
+window.setCurrentFleet = id => localStorage.setItem('current_fleet', id);
+
 window.getCurrentPlanet = () => {
     let currentPlanet;
     if (typeof (currentPlanet = localStorage.getItem('current_planet')) === 'undefined') {
@@ -20,6 +22,15 @@ window.getCurrentPlanet = () => {
         return;
     }
     return currentPlanet;
+};
+
+window.getCurrentFleet = () => {
+    let currentFleet;
+    if (typeof (currentFleet = localStorage.getItem('current_fleet')) === 'undefined') {
+        window.location = '/views/fleet/fleet-all.html';
+        return;
+    }
+    return currentFleet;
 };
 
 Dictionnary.translateTags();
