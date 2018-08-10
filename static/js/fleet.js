@@ -4,12 +4,14 @@ import Fleet from './model/fleet.js';
 import Planet from './model/planet.js';
 import Player from './model/player.js';
 
-import { getHTMLShipArrayStringFleet, getHTMLShipArrayStringHangar } from './ship.js';
+import { getHTMLShipArrayStringFleet, getHTMLShipArrayStringHangar, UniqueModelList } from './ship.js';
 
 
 const planetId = window.getCurrentPlanet();
 var fleetId = window.getCurrentFleet();
 const COLL_SPAN = 2;
+var modelListHangar;
+var modelListFleet;
 
 const refreshFleetId = () => {
 	fleetId = window.getCurrentFleet();
@@ -183,7 +185,26 @@ export const initFleetViewSingle = () => {
 		});
 		
 		Planet.fetchShips(planetId).then( ships => {
-			document.querySelector('#ships-hangar > .ships-list > div').innerHTML= getHTMLShipArrayStringHangar(ships)
+			document.querySelector('#ships-hangar > .ships-list > div.ships-table').innerHTML= getHTMLShipArrayStringHangar(ships);
+			
+			
+			var flexRows = document.querySelectorAll('#ships-hangar > .ships-list > div.ships-table > div.flex-row:not(:first-child)');
+			document.querySelector('#ships-hangar > .ships-list > div.ships-table > div.flex-row:first-child').innerHTML += `<div class="model-transfer"> ${Dictionnary.translations.fleet.view.single.transfer} </div>`
+			
+			modelListHangar = new UniqueModelList(ships);
+			var iterator = 0;
+			flexRows.forEach((node) => {
+				
+				var modelIdData =  node.querySelector('.model-number').getAttribute("model-id-data");
+				node.innerHTML += `<div class="model-transfer"> <input type="number"><span class ="transfer-ship" model-id-data="${modelIdData}"> ${Dictionnary.translations.fleet.view.single.transfer} </span> </div>
+				</div>`
+				
+				node.querySelector('span.transfer-ship').onclick = (event) => {transferShipsToFleetButtonClick(event)}
+				++iterator;
+			});
+			
+			
+			
 		});
 		
 		// TODO dans le back aussi
@@ -192,3 +213,10 @@ export const initFleetViewSingle = () => {
 		});*/
 	});
 };
+
+export const transferShipsToFleetButtonClick = (node) => {
+	var node = event.currentTarget;
+	var number = node.parentNode.querySelector(`input`).value
+	var modelId = node.getAttribute("model-id-data");
+	alert(`transfering ${number} ships with modelId ${modelId}`)
+}
