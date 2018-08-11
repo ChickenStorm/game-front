@@ -184,39 +184,122 @@ export const initFleetViewSingle = () => {
 			
 		});
 		
-		Planet.fetchShips(planetId).then( ships => {
-			document.querySelector('#ships-hangar > .ships-list > div.ships-table').innerHTML= getHTMLShipArrayStringHangar(ships);
-			
-			
-			var flexRows = document.querySelectorAll('#ships-hangar > .ships-list > div.ships-table > div.flex-row:not(:first-child)');
-			document.querySelector('#ships-hangar > .ships-list > div.ships-table > div.flex-row:first-child').innerHTML += `<div class="model-transfer"> ${Dictionnary.translations.fleet.view.single.transfer} </div>`
-			
-			modelListHangar = new UniqueModelList(ships);
-			var iterator = 0;
-			flexRows.forEach((node) => {
-				
-				var modelIdData =  node.querySelector('.model-number').getAttribute("model-id-data");
-				node.innerHTML += `<div class="model-transfer"> <input type="number"><span class ="transfer-ship" model-id-data="${modelIdData}"> ${Dictionnary.translations.fleet.view.single.transfer} </span> </div>
-				</div>`
-				
-				node.querySelector('span.transfer-ship').onclick = (event) => {transferShipsToFleetButtonClick(event)}
-				++iterator;
-			});
-			
-			
-			
-		});
-		
-		// TODO dans le back aussi
-		/*Fleet.fetchShips(id).then( ships => {
-			document.querySelector('#ships-fleet > .ships-list').innerHTML= getHTMLShipArrayStringFleet(ships)
-		});*/
+		refreshShipsView(planet);
 	});
 };
 
-export const transferShipsToFleetButtonClick = (node) => {
+const refreshShipsView = (planet) => {
+	/*
+	 * refresh the two tables the ships for the single fleet view with the possibility of transfering ships
+	 */
+	Planet.fetchShips(planetId).then( ships => {
+		document.querySelector('#ships-hangar > .ships-list > div.ships-table').innerHTML= getHTMLShipArrayStringHangar(ships); //< make the table for ships in hangar
+		
+		
+		var flexRows = document.querySelectorAll('#ships-hangar > .ships-list > div.ships-table > div.flex-row:not(:first-child)'); //< querry each row exept header
+		document.querySelector('#ships-hangar > .ships-list > div.ships-table > div.flex-row:first-child').innerHTML += `<div class="model-transfer"> ${Dictionnary.translations.fleet.view.single.transfer} </div>` //< in the header add a new collum
+		
+		// modelListHangar is a global variable in order ro dimishi the number of fetch
+		modelListHangar = new UniqueModelList(ships); //< see in Ships.js, this is a tool
+		
+		
+		flexRows.forEach((node) => {
+			
+			/* In eah row exept the header we add a new collum for the transfer
+			 * which has a soan ( as a button) and in number inputé.
+			 * I store the model id in the atribute "model-id-data"
+			 */
+			var modelIdData =  node.querySelector('.model-number').getAttribute("model-id-data");
+			node.innerHTML += `<div class="model-transfer"> <input type="number"><span class ="transfer-ship" model-id-data="${modelIdData}"> ${Dictionnary.translations.fleet.view.single.transfer} </span> </div>
+			</div>` 
+			
+			
+			node.querySelector('span.transfer-ship').onclick = (event) => {transferShipsToFleetButtonClick(event)}
+		});
+		
+	});
+	
+	
+	Fleet.fetchShips(fleetId).then( ships => {
+		document.querySelector('#ships-fleet > .ships-list > div.ships-table').innerHTML= getHTMLShipArrayStringHangar(ships);
+		
+		
+		var flexRows = document.querySelectorAll('#ships-fleet > .ships-list > div.ships-table > div.flex-row:not(:first-child)');
+		document.querySelector('#ships-fleet > .ships-list > div.ships-table > div.flex-row:first-child').innerHTML += `<div class="model-transfer"> ${Dictionnary.translations.fleet.view.single.transfer} </div>`
+		
+		modelLisFleet = new UniqueModelList(ships);
+		
+		flexRows.forEach((node) => {
+			
+			var modelIdData =  node.querySelector('.model-number').getAttribute("model-id-data");
+			node.innerHTML += `<div class="model-transfer"> <input type="number"><span class ="transfer-ship" model-id-data="${modelIdData}"> ${Dictionnary.translations.fleet.view.single.transfer} </span> </div>
+			</div>`
+			
+			node.querySelector('span.transfer-ship').onclick = (event) => {transferShipsToHangarButtonClick(event)}
+			
+		});
+	});	
+};
+
+export const transferShipsToFleetButtonClick = (event) => {
 	var node = event.currentTarget;
-	var number = node.parentNode.querySelector(`input`).value
+	var number = parseInt(node.parentNode.querySelector(`input`).value)
+	
+	if ( isNaN(number) || number <= 0) {
+		throw "I need a positive number of ships to transfer";
+	}
+	
 	var modelId = node.getAttribute("model-id-data");
-	alert(`transfering ${number} ships with modelId ${modelId}`)
+	
+	
+	if (isNaN(modelId)){
+		throw "modelId must be an integer ()"
+	}
+	
+	var ships =modelLisFleet.getShipsIdFromModelId(modelId)
+	
+	if (ships.length == 0){
+		throw "You have no ships with this id"
+	}
+	if (ships.length <= number){
+		throw "Not enought ships to transfer"
+	}
+	
+	refreshFleetId();
+	
+	var shipsIdToTransfer = ships.splice(0,number) // take only the number ships in shipsIdToTransfer
+	Fleet.transferShipsToFleet(shipsIdToTransfer,fleetId).then( () => {
+		refreshShipsView(); //< robuste way to refresh view but require two fetch
+	});
+	
+};
+
+export const transferShipsToHangarButtonClick = (event) => {
+	var node = event.currentTarget;
+	var number = parseInt(node.parentNode.querySelector(`input`).value)
+	
+	if ( isNaN(number) || number <= 0) {
+		throw "I need a positive number of ships to transfer";
+	}
+	
+	var modelId = parseInt(node.getAttribute("model-id-data"));
+	
+	if (isNaN(modelId)){
+		throw "modelId must be an integer ()"
+	}
+	
+	var ships =modelLisFleet.getShipsIdFromModelId(modelId)
+	
+	if (ships.length == 0){
+		throw "You have no ships with this id"
+	}
+	if (ships.length <= number){
+		throw "Not enought ships to transfer"
+	}
+	
+	var shipsIdToTransfer = ships.splice(0,number) // take only the number ships in shipsIdToTransfer
+	Fleet.transferShipsToHangar(shipsIdToTransfer).then( () => {
+		refreshShipsView(); //< robuste way to refresh view but require two fetch
+	});
+	
 }
