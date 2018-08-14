@@ -191,7 +191,15 @@ const refreshShipsView = (planet) => {
 	/*
 	 * refresh the two tables the ships for the single fleet view with the possibility of transfering ships
 	 */
-	Planet.fetchShips(planetId).then( ships => {
+	
+
+	/*return new Promise ((resolve, reject) => {
+	let promiseResolved = false;
+	let rejectTiemout = setTimeout(reject, 2000);*/
+	
+	var promiseArray = [];
+	
+	promiseArray[0] = Planet.fetchShips(planetId).then( ships => {
 		document.querySelector('#ships-hangar > .ships-list > div.ships-table').innerHTML= getHTMLShipArrayStringHangar(ships); //< make the table for ships in hangar
 		
 		
@@ -216,12 +224,21 @@ const refreshShipsView = (planet) => {
 			node.querySelector('span.transfer-ship').onclick = (event) => {transferShipsToFleetButtonClick(event)};
 			node.querySelector('input').value = 1;
 			node.querySelector('input').oninput = (event) => {inputEventManagerHangar(event)};
+			
 		});
+		
+		/*if ( promiseResolved ){
+			clearTimeout(rejectTiemout);
+			resolve;
+		}
+		else{
+			promiseResolved = true;
+		}*/
 		
 	});
 	
 	
-	Fleet.fetchShips(fleetId).then( ships => {
+	promiseArray[1] = Fleet.fetchShips(fleetId).then( ships => {
 		document.querySelector('#ships-fleet > .ships-list > div.ships-table').innerHTML= getHTMLShipArrayStringHangar(ships);
 		
 		
@@ -240,7 +257,73 @@ const refreshShipsView = (planet) => {
 			node.querySelector('input').value = 1;
 			node.querySelector('input').oninput = (event) => {inputEventManagerFleet(event)};
 		});
-	});	
+		
+		/*if ( promiseResolved ){
+			clearTimeout(rejectTiemout);
+			resolve;
+		}
+		else{
+			promiseResolved = true;
+		}*/
+	});
+		
+		
+		
+	/*});*/
+	
+	return promiseArray;
+};
+
+const refreshShipsViewWithInputBoxNumbers = () => {
+	/*
+	 * Restet the view and keep the input number os the ships
+	 */
+	var nodesFleet = document.querySelectorAll('#ships-fleet > .ships-list > div.ships-table > div.flex-row:not(:first-child)');
+	var modelIdArrayFleet = [];
+	var inputArrayFleet = [];
+	var modelIdArrayHangar = [];
+	var inputArrayHangar = [];
+	
+	nodesFleet.forEach((node) => { // we search and store the inputs value for the fleet ships
+		var modelIdData = parseInt(node.querySelector('.model-number').getAttribute("model-id-data"));
+		modelIdArrayFleet.push(modelIdData);
+		inputArrayFleet.push(parseInt(node.querySelector('input').value));
+	});
+	
+	var nodesHangar = document.querySelectorAll('#ships-hangar > .ships-list > div.ships-table > div.flex-row:not(:first-child)');
+	
+	nodesHangar.forEach((node) => { // we search and store the inputs value for the hangar ships
+		var modelIdData =  parseInt(node.querySelector('.model-number').getAttribute("model-id-data"));
+		modelIdArrayHangar.push(modelIdData);
+		inputArrayHangar.push(parseInt(node.querySelector('input').value));
+	});
+	
+	var promiseArray = refreshShipsView()
+	
+	promiseArray[0].then(() => {
+		document.querySelectorAll('#ships-hangar > .ships-list > div.ships-table > div.flex-row:not(:first-child)').forEach( (node) => {
+			var modelIdData =  parseInt(node.querySelector('.model-number').getAttribute("model-id-data"));
+			for (let i in modelIdArrayHangar){
+				if (modelIdData == modelIdArrayHangar[i]) {
+					node.querySelector('input').value = inputArrayHangar[i];
+					break;
+				}
+			}
+		});
+	});
+	
+	promiseArray[1].then(() => {
+		document.querySelectorAll('#ships-fleet > .ships-list > div.ships-table > div.flex-row:not(:first-child)').forEach( (node) => {
+			var modelIdData =  parseInt(node.querySelector('.model-number').getAttribute("model-id-data"));
+			for (let i in modelIdArrayFleet){
+				if (modelIdData == modelIdArrayFleet[i]) {
+					node.querySelector('input').value = inputArrayFleet[i];
+					break;
+				}
+			}
+		});
+	});
+	
 };
 
 /**************************************/
@@ -294,7 +377,7 @@ export const transferShipsToFleetButtonClick = (event) => {
 	
 	var shipsIdToTransfer = ships.splice(0,number); // take only the number ships in shipsIdToTransfer
 	Fleet.transferShipsToFleet(shipsIdToTransfer,fleetId).then( () => {
-		refreshShipsView(); //< robuste way to refresh view but require two fetch
+		refreshShipsViewWithInputBoxNumbers(); //< robuste way to refresh view but require two fetch
 	});
 	
 };
@@ -327,7 +410,7 @@ export const transferShipsToHangarButtonClick = (event) => {
 	
 	var shipsIdToTransfer = ships.splice(0,number); // take only the number ships in shipsIdToTransfer
 	Fleet.transferShipsToHangar(shipsIdToTransfer).then( () => {
-		refreshShipsView(); //< robuste way to refresh view but require two fetch
+		refreshShipsViewWithInputBoxNumbers(); //< robuste way to refresh view but require two fetch
 	});
 	
 };
