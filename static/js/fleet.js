@@ -11,6 +11,7 @@ import { getHTMLShipArrayStringFleet, getHTMLShipArrayStringHangar, UniqueModelL
 
 const planetId = window.getCurrentPlanet();
 var fleetId = window.getCurrentFleet();
+var planetIdFleetLocation;
 const COLL_SPAN = 2;
 var modelListHangar;
 var modelListFleet;
@@ -160,6 +161,9 @@ export const initBaseForFleet = () => Planet.fetch(planetId).then(planet => {
 	    profileLink.href = '/views/profile';
 	    profileLink.innerText = player.pseudo;
 	    document.querySelector("#player-data h3").appendChild(profileLink);
+		document.querySelector('#logout').addEventListener('click', () => {
+			Player.logout();
+		});
 	});
 	
     document.querySelector('#planet-data > header > h1').innerHTML = Dictionnary.translations.planet.fleet.replace("%planet%", `<a href="/views/map/planet.html?id=${planet.id}">${planet.name}</a>`);
@@ -173,21 +177,27 @@ export const initFleetViewSingle = () => {
 	refreshFleetId();
 	
 	var id = fleetId;
-	Planet.fetch(planetId).then(planet => { 
+	
+	Fleet.fetch(id).then( fleet => {
+		document.querySelector('#fleet-table').innerHTML = getHTMLFleetArrayData([fleet],false);
 		
-		document.querySelector('#fleet-view > section > h3').innerHTML = Dictionnary.translations.fleet.view.single.title.replace("%fleet%", `<span class="fleet-id"> ${id} </span>`);
-		
-		
-		Fleet.fetch(id).then( fleet => {
-			document.querySelector('#fleet-table').innerHTML = getHTMLFleetArrayData([fleet],false);
-			
-		});
-		
-		refreshShipsView(planet);
+		planetIdFleetLocation = fleet.location.id; // in fact we set the planetId to the fleet location
+		if (planetIdFleetLocation != null && planetIdFleetLocation != undefined){
+			Planet.fetch(planetIdFleetLocation).then(planet => { 
+				
+				document.querySelector('#fleet-view > section > h3').innerHTML = Dictionnary.translations.fleet.view.single.title.replace("%fleet%", `<span class="fleet-id"> ${id} </span>`);
+				
+				refreshShipsView(planetIdFleetLocation);
+			});
+		}
+		else{
+			//TODO show for journey
+		}
 	});
+	
 };
 
-const refreshShipsView = (planet) => {
+const refreshShipsView = (hangarId) => {
 	/*
 	 * refresh the two tables the ships for the single fleet view with the possibility of transfering ships
 	 */
@@ -199,7 +209,7 @@ const refreshShipsView = (planet) => {
 	
 	var promiseArray = [];
 	
-	promiseArray[0] = Planet.fetchShips(planetId).then( ships => {
+	promiseArray[0] = Planet.fetchShips(hangarId).then( ships => {
 		document.querySelector('#ships-hangar > .ships-list > div.ships-table').innerHTML= getHTMLShipArrayStringHangar(ships); //< make the table for ships in hangar
 		
 		
@@ -298,7 +308,7 @@ const refreshShipsViewWithInputBoxNumbers = () => {
 		inputArrayHangar.push(parseInt(node.querySelector('input').value));
 	});
 	
-	var promiseArray = refreshShipsView()
+	var promiseArray = refreshShipsView(planetIdFleetLocation)
 	
 	promiseArray[0].then(() => {
 		document.querySelectorAll('#ships-hangar > .ships-list > div.ships-table > div.flex-row:not(:first-child)').forEach( (node) => {
