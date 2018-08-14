@@ -101,7 +101,7 @@ export const getHTMLFleetData = (fleet,isPlanetView = true) => {
 	}
 	
 	var id = fleet.id;
-	return `<tr class="fleet-container"> <th class="fleet-id"> ${id} </th> <th class="fleet-position"> ${textPosition} </th> </tr>`;
+	return `<tr class="fleet-container tr-link" onclick="location.href='/views/fleet/fleet.html?id=${id}'"> <th class="fleet-id"> ${id} </th> <th class="fleet-position"> ${textPosition} </th> </tr>`;
 	
 };
 
