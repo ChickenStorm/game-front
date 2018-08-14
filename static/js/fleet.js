@@ -350,10 +350,15 @@ export const transferShipsToFleetButtonClick = (event) => {
 	/*
 	 * function called when the span to transfer ships to fleet is pushed ( so the button in the HANGAR)
 	 */
+	
+	
 	var node = event.currentTarget;
 	var number = parseInt(node.parentNode.querySelector(`input`).value)
 	
+	
+	
 	if ( isNaN(number) || number <= 0) {
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.need_positive_number);
 		throw "I need a positive number of ships to transfer";
 	}
 	
@@ -361,15 +366,18 @@ export const transferShipsToFleetButtonClick = (event) => {
 	
 	
 	if (isNaN(modelId)){
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.model_id_NaN);
 		throw "modelId must be an integer";
 	}
 	
 	var ships =modelListHangar.getShipsIdFromModelId(modelId);
 	
 	if (ships.length == 0){
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.no_ships_with_model);
 		throw "You have no ships with this id";
 	}
 	if (ships.length < number){
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.not_enough_ship);
 		throw "Not enought ships to transfer";
 	}
 	
@@ -390,21 +398,24 @@ export const transferShipsToHangarButtonClick = (event) => {
 	var number = parseInt(node.parentNode.querySelector(`input`).value);
 	
 	if ( isNaN(number) || number <= 0) {
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.need_positive_number);
 		throw "I need a positive number of ships to transfer";
 	}
 	
 	var modelId = parseInt(node.getAttribute("model-id-data"));
 	
 	if (isNaN(modelId)){
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.model_id_NaN);
 		throw "modelId must be an integer";
 	}
-	
 	var ships =modelListFleet.getShipsIdFromModelId(modelId);
 	
 	if (ships.length == 0){
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.no_ships_with_model);
 		throw "You have no ships with this id";
 	}
 	if (ships.length < number){
+		transferShipsErrorShow(node ,Dictionnary.translations.fleet.view.single.error.not_enough_ship);
 		throw "Not enought ships to transfer";
 	}
 	
@@ -415,6 +426,20 @@ export const transferShipsToHangarButtonClick = (event) => {
 	
 };
 
+const transferShipsErrorShow = (node, errorMessage) => {
+	var parent = node.parentNode;
+	
+	var errorsSpan = parent.querySelector('span.error-transfer')
+	if (errorsSpan == null) {
+		let span = document.createElement("span")
+		span.innerHTML = "<br>" + errorMessage;
+		span.classList.add("error-transfer");
+		parent.appendChild(span);
+	}
+	else{
+		errorsSpan.innerHTML = "<br>"+errorMessage;
+	}
+};
 
 export const inputEventManagerFleet = (event) => {
 	/*
